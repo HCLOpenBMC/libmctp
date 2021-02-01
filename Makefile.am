@@ -22,7 +22,11 @@ systemdsystemunit_DATA = \
 endif
 
 bin_PROGRAMS = utils/mctp-demux-daemon
-utils_mctp_demux_daemon_LDADD = libmctp.la
+utils_mctp_demux_daemon_LDADD = libmctp.la 
+
+utils_mctp_demux_daemon_LDFLAGS = $(LIBNL_LIBS)
+
+utils_mctp_demux_daemon_CPPFLAGS = $(LIBNL_CFLAGS)
 
 pkgconfig_DATA = libmctp.pc
 

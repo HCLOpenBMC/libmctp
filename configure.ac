@@ -18,6 +18,9 @@ LT_INIT
 AC_CHECK_HEADERS_ONCE([endian.h])
 AC_CHECK_HEADERS_ONCE([unistd.h fcntl.h])
 
+
+PKG_CHECK_MODULES([LIBNL], [libnl-3.0 libnl-genl-3.0])
+
 # pkg-config
 PKG_PROG_PKG_CONFIG
 PKG_INSTALLDIR

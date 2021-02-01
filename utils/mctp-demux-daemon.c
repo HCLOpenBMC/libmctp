@@ -21,11 +21,16 @@
 #include "libmctp-serial.h"
 #include "libmctp-astlpc.h"
 
+#include "ncsi.h"
+
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 #define __unused __attribute__((unused))
 
 static const mctp_eid_t local_eid_default = 8;
-static char sockname[] = "\0mctp-mux";
+static char sockname1[] = "\0ncsi-mux";
+
+extern char *ncsi_data;
+extern int data_len;
 
 struct binding {
 	const char	*name;
@@ -99,6 +104,35 @@ static void rx_message(uint8_t eid, void *data, void *msg, size_t len)
 		fprintf(stderr, "MCTP message received: len %zd, type %d\n",
 				len, type);
 
+    printf(stderr, "\nPrinting the PLDM request with length : %d\n", len);
+    for (i = 0; i < len; ++i) {
+        if (i && !(i%4))
+            fprintf(stderr, "\n%d: ", i);
+        fprintf(stderr, "0x%02x ", *(char*)(msg+i));
+    }
+    fprintf(stderr, "\n");
+
+
+    int package = 0;
+    int channel = 0;
+    int ifindex = 2;
+    int opcode  = 81;
+    short payload_length = 12;
+    char* payload = msg+1;
+
+    rc = run_command_send(ifindex, package, channel, opcode, payload_length, payload);
+
+    memcpy(ncsi_data,msg,data_len);
+
+    
+    fprintf(stderr, "\nPrinting the ncsi response with length : %d\n", data_len);
+    for (i = 0; i < data_len; ++i) {
+        if (i && !(i%4))
+            fprintf(stderr, "\n%d: ", i);
+        fprintf(stderr, "0x%02x ", *(char*)(msg+i));
+    }
+    fprintf(stderr, "\n");
+    
 	memset(&msghdr, 0, sizeof(msghdr));
 	msghdr.msg_iov = iov;
 	msghdr.msg_iovlen = 2;
@@ -250,9 +284,9 @@ static int socket_init(struct ctx *ctx)
 	struct sockaddr_un addr;
 	int namelen, rc;
 
-	namelen = sizeof(sockname) - 1;
+	namelen = sizeof(sockname1) - 1;
 	addr.sun_family = AF_UNIX;
-	memcpy(addr.sun_path, sockname, namelen);
+	memcpy(addr.sun_path, sockname1, namelen);
 
 	ctx->sock = socket(AF_UNIX, SOCK_SEQPACKET, 0);
 	if (ctx->sock < 0) {
@@ -509,7 +543,7 @@ int main(int argc, char * const *argv)
 	ctx->clients = NULL;
 	ctx->n_clients = 0;
 	ctx->local_eid = local_eid_default;
-	ctx->verbose = false;
+	ctx->verbose = true;
 
 	for (;;) {
 		rc = getopt_long(argc, argv, "e:v", options, NULL);
